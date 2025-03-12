@@ -8,8 +8,12 @@ class vert {
     }
 }
 
-class graph {
-    constructor() {}
+class node {
+    constructor(pos) {
+        this.pos = pos
+        this.neib = []
+        this.steps = null
+    }
 }
 
 class chessBoard {
@@ -36,7 +40,7 @@ class chessBoard {
             row += '\n'
             for (let k = 0; k < this.board[i].length; k++) {
                 if (this.board[i][k].visited !== null) {
-                    row += `│${i}$${k}│`
+                    row += `│${i}▮${k}│`
                     continue
                 }
                 row += `│${i} ${k}│`
@@ -70,30 +74,83 @@ class chessBoard {
         return possibilites
     }
 
+    buildGraph() {
+        let graph = []
+        for (let i = 0; i < 8; i++) {
+            for (let k = 0; k < 8; k++) {
+                graph.push(new node([i, k]))
+            }
+        }
+        for (let i = 0; i < 64; i++) {
+            graph[i].neib = this.knightNextStep(graph[i].pos)
+        }
+        return graph
+    }
+
+    findNodeInd(pos) {
+        return pos[0] * 8 + pos[1]
+    }
+
     knightWalk(start = [0, 0], end = [7, 7]) {
-        let p = start
-        console.log(this.knightNextStep(start))
+        let c = 0
+        let way = []
+        let variants = []
         let steps = 0
-        while (p[0] !== end[0] && p[1] !== end[1] && steps < 500) {
-            steps++
-            this.board[p[0]][p[1]].visited = 'yes'
-            const hmm = this.knightNextStep(p)
-            let avia = []
-            for (let i = 0; i < hmm.length; i++) {
-                if (this.board[hmm[i][0]][hmm[i][1]].visited === null) {
-                    avia.push(hmm[i])
+        let curNode = null
+        let startNode = this.graph[this.findNodeInd(start)]
+        let endNode = this.graph[this.findNodeInd(end)]
+        startNode.steps = 0
+        let stack = []
+        stack.push(startNode)
+
+        while (stack.length > 0 && c < 100) {
+            c++
+            curNode = stack.pop()
+            way = way.slice(0, curNode.steps)
+            way.push(curNode)
+            if (this.isWin(curNode, endNode)) {
+                variants.push(way)
+            }
+
+            steps = way.length
+            const possib = this.knightNextStep(curNode.pos)
+            for (let i = 0; i < possib.length; i++) {
+                const aaa = this.graph[this.findNodeInd(possib[i])]
+                if (this.visit(aaa, way) === null) {
+                    aaa.steps = steps
+                    stack.push(aaa)
                 }
             }
         }
     }
+
+    visit(node, ar) {
+        for (let i = 0; i < ar.length; i++) {
+            if (node.pos[0] === ar[i].pos[0] && node.pos[1] === ar[i].pos[1]) {
+                return 1
+            }
+        }
+        return null
+    }
+
+    isWin(curNode, endNode) {
+        if (
+            curNode.pos[0] === endNode.pos[0] &&
+            curNode.pos[1] === endNode.pos[1]
+        ) {
+            return true
+        }
+        false
+    }
+
     constructor() {
         this.x = 8
         this.y = 8
         this.board = this.buildBoard()
+        this.graph = this.buildGraph()
     }
 }
 
 const x = new chessBoard()
 x.knightWalk()
-
 x.visual
