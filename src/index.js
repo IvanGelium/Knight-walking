@@ -12,7 +12,6 @@ class node {
     constructor(pos) {
         this.pos = pos
         this.neib = []
-        this.steps = null
     }
 }
 
@@ -95,33 +94,41 @@ class chessBoard {
         let c = 0
         let way = []
         let variants = []
-        let steps = 0
         let curNode = null
         let startNode = this.graph[this.findNodeInd(start)]
         let endNode = this.graph[this.findNodeInd(end)]
-        startNode.steps = 0
         let stack = []
-        stack.push(startNode)
+        stack.push({ n: startNode, s: 0 })
 
         while (stack.length > 0 && c < 100) {
             c++
-            curNode = stack.pop()
-            way = way.slice(0, curNode.steps)
-            way.push(curNode)
-            if (this.isWin(curNode, endNode)) {
-                variants.push(way)
+            curNode = stack.shift()
+            way = way.slice(0, curNode.s)
+            way.push(curNode.n)
+            const win = this.isWin(curNode.n, endNode)
+            switch (win) {
+                case true:
+                    return 
+                    // variants.push(way.map((x) => x))
+                    // continue
+                case false:
+                    break
+                default:
+                    way.push(endNode)
+                    variants.push(way.map((x) => x))
+                    continue
             }
 
-            steps = way.length
-            const possib = this.knightNextStep(curNode.pos)
+            const possib = this.graph[this.findNodeInd(curNode.n.pos)].neib
             for (let i = 0; i < possib.length; i++) {
                 const aaa = this.graph[this.findNodeInd(possib[i])]
                 if (this.visit(aaa, way) === null) {
-                    aaa.steps = steps
-                    stack.push(aaa)
+                    stack.push({ n: aaa, s: way.length })
                 }
             }
         }
+        console.log(variants)
+        // console.log(sort(variants))
     }
 
     visit(node, ar) {
@@ -134,13 +141,20 @@ class chessBoard {
     }
 
     isWin(curNode, endNode) {
-        if (
-            curNode.pos[0] === endNode.pos[0] &&
-            curNode.pos[1] === endNode.pos[1]
-        ) {
-            return true
+        const winNodeAr = endNode.neib.map((x) => x)
+        winNodeAr.push(endNode.pos)
+        for (let i = 0; i < winNodeAr.length; i++) {
+            if (
+                curNode.pos[0] === winNodeAr[i][0] &&
+                curNode.pos[1] === winNodeAr[i][1]
+            ) {
+                if (winNodeAr.length === i - 1) {
+                    return true
+                }
+                return winNodeAr[i]
+            }
         }
-        false
+        return false
     }
 
     constructor() {
@@ -152,5 +166,52 @@ class chessBoard {
 }
 
 const x = new chessBoard()
-x.knightWalk()
+x.knightWalk([0, 0], [1, 0])
 x.visual
+
+function sort(array) {
+    function splitAr(array) {
+        if (array.length <= 1) {
+            return array
+        }
+        let arL = array.slice(0, Math.floor(array.length / 2))
+        let arR = array.slice(Math.floor(array.length / 2))
+
+        return mergeAr(splitAr(arL), splitAr(arR))
+    }
+
+    function mergeAr(arL, arR) {
+        let L = 0
+        let R = 0
+        let sorted = []
+        while (L < arL.length && R < arR.length) {
+            if (arL[L].length < arR[R].length) {
+                sorted.push(arL[L])
+                L++
+            } else {
+                sorted.push(arR[R])
+                R++
+            }
+        }
+        while (L < arL.length) {
+            sorted.push(arL[L])
+            L++
+        }
+        while (R < arR.length) {
+            sorted.push(arR[R])
+            R++
+        }
+        return sorted
+    }
+    function delDupl(sorted) {
+        let idx = 1
+        for (let i = 1; i < sorted.length; i++) {
+            if (sorted[i] !== sorted[i - 1]) {
+                sorted[idx++] = sorted[i]
+            }
+        }
+        return sorted.slice(0, idx)
+    }
+    let sorted = splitAr(array)
+    return delDupl(sorted)
+}
